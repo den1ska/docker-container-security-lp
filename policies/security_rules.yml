@@ -1,0 +1,91 @@
+---
+profile:
+  name: "Security Rules"
+  description: "Set of rules focus on security aspects of Dockerfiles"
+
+line_rules:
+
+  FROM:
+    paramSyntaxRegex: /^[\w./\-:]+(:[${}\w.]+)?(-[${}\w.]+)?( as \w+)?$/i
+    rules:
+      -
+        label: "no_tag"
+        regex: /:/
+        inverse_rule: true
+        level: "warn"
+        message: "No tag is specified"
+        description: "If no tag is specified then the latest image is used"
+
+      -
+        label: "no_latest"
+        regex: /:latest/
+        level: "warn"
+        message: "FROM uses the latest image"
+        description: "Avoid using the latest images"
+
+  ADD:
+    paramSyntaxRegex: /^~?([\w-.~:/?#\[\]\\\/*@!$&'()*+,;=.{}"]+[\s]*)+$/
+    rules:
+      -
+        label: "no_add_without_https"
+        regex: /http\:\/\/.*/
+        level: "warn"
+        message: "ADD is using a non-HTTPS url as source"
+        description: "Using a URL without HTTPS can lead to MITM attacks on your infrastructure."
+
+  RUN:
+    paramSyntaxRegex: /.+/
+    rules:
+      -
+        label: "no_run_without_https"
+        regex: /http\:\/\/.*/g
+        level: "warn"
+        message: "RUN is referencing a non-HTTPS url"
+        description: "Using a URL without HTTPS can lead to MITM attacks on your infrastructure."
+
+      -
+        label: "no_run_with_sudo"
+        regex: /sudo/
+        level: "warn"
+        message: "Sudo has dangerous side effects"
+        description: "Using sudo may lead to privilige escalation"
+
+      -
+        label: "privileged_run_container"
+        regex: /privileged/
+        level: "warn"
+        message: "a privileged run container is allowed access to host devices"
+        description: "Does this run need to be privileged?"
+        reference_url: 
+          - "http://docs.docker.com/engine/reference/run/#"
+          - "runtime-privilege-and-linux-capabilities"
+
+      -
+        label: "installing_ssh"
+        regex: /openssh-server/
+        level: "warn"
+        message: "installing SSH in a container is not recommended"
+        description: "Do you really need SSH in this image?"
+        reference_url: "https://github.com/jpetazzo/nsenter"
+
+  USER:
+    paramSyntaxRegex: /^[a-z_]([a-z0-9_-]{0,31}|[a-z0-9_-]{0,30}\$)$/
+    rules:
+      -
+        label: "no_root_user"
+        regex: /root|0/
+        level: "warn"
+        message: "Containers should not be run as root"
+        description: "Using root may result in untrusted access to the host resources"
+        reference_url: "https://medium.com/@mccode/processes-in-containers-should-not-run-as-root-2feae3f0df3b"
+
+required_instructions:
+
+  -
+    instruction: "USER"
+    count: 1
+    level: "warn"
+    message: "No 'USER' instruction in the file"
+    description: "If a USER command is not specified, the container may be running as the root user"
+    reference_url:
+      - "https://medium.com/@mccode/processes-in-containers-should-not-run-as-root-2feae3f0df3b"

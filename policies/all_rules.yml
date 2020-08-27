@@ -1,0 +1,7 @@
+---
+profile:
+  name: "All Rules"
+  description: "Set of all rules for this project"
+  includes:
+    - security_rules.yml
+    - custom_rules.yml

@@ -1,0 +1,52 @@
+---
+profile:
+  name: "Custom Rules"
+  description: "Set of custom rules for Docker Security LP"
+
+line_rules:
+
+  FROM:
+    paramSyntaxRegex: /^[\w./\-:]+(:[${}\w.]+)?(-[${}\w.]+)?( as \w+)?$/i
+    rules:
+      -
+        label: "no_tag"
+        regex: /:/
+        inverse_rule: true
+        level: "warn"
+        message: "No tag is specified"
+        description: "If no tag is specified then the latest image is used"
+
+      -
+        label: "no_latest"
+        regex: /:latest/
+        level: "warn"
+        message: "FROM uses the latest image"
+        description: "Avoid using the latest images"
+
+  LABEL:
+    paramSyntaxRegex: /.+/
+    defined_namevals:
+      Maintainer:
+        valueRegex: /\w+/
+        level: "warn"
+        message: "Label 'Maintainer' is missing or has invalid format"
+        required: true
+
+  HEALTHCHECK:
+    paramSyntaxRegex: /.+/
+    rules:
+      -
+        label: "curl_in_healthcheck"
+        regex: /curl/
+        level: "warn"
+        message: "cURL found in HEALTHCHECK instruction"
+        description: "Avoid use of cURL"
+ 
+required_instructions:
+  -
+    instruction: "HEALTHCHECK"
+    count: 1
+    level: "warn"
+    message: "There is no HEALTHCHECK instruction"
+    description: "Define a command to check container's health"
+
