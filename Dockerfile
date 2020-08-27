@@ -1,4 +1,4 @@
-FROM alpine:3.11
+FROM alpine:3.11.6
 
 ENV HUGO_VERSION=0.74.3
 ENV HUGO_HOME=/opt/hugo
@@ -38,7 +38,7 @@ WORKDIR /src
 
 EXPOSE 1313
 
-LABEL MAINTAINER=psellars@gmail.com
+LABEL MAINTAINER=denis@kononenko.spb.ru
 
-HEALTHCHECK CMD curl --fail http://localhost:1313 || exit 1
+HEALTHCHECK CMD hugo env || exit 1
 
