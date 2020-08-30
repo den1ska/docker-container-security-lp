@@ -1,0 +1,83 @@
+---
+profile:
+  name: "Custom Rules"
+  description: "Set of custom rules for Docker Security LP"
+
+line_rules:
+
+  FROM:
+    paramSyntaxRegex: /^[\w./\-:]+(:[${}\w.]+)?(-[${}\w.]+)?( as \w+)?$/i
+    rules:
+      -
+        label: "no_tag"
+        regex: /:/
+        inverse_rule: true
+        level: "warn"
+        message: "No tag is specified"
+        description: "If no tag is specified then the latest image is used"
+
+      -
+        label: "no_latest"
+        regex: /:latest/
+        level: "warn"
+        message: "FROM uses the latest image"
+        description: "Avoid using the latest images"
+
+  LABEL:
+    paramSyntaxRegex: /.+/
+    defined_namevals:
+      Maintainer:
+        valueRegex: /\w+/
+        level: "warn"
+        message: "Label 'Maintainer' is missing or has invalid format"
+        required: true
+      org.opencontainers.image.title:
+        valueRegex: /\w+/
+        level: "warn"
+        message: "Label 'org.opencontainers.image.title' is missing or has invalid format"
+        required: true
+      org.opencontainers.image.created:
+        valueRegex: /\w+/
+        level: "warn"
+        message: "Label 'org.opencontainers.image.created' is missing or has invalid format"
+        required: true
+      org.opencontainers.image.source:
+        valueRegex: /\w+/
+        level: "warn"
+        message: "Label 'org.opencontainers.image.source' is missing or has invalid format"
+        required: true
+      org.opencontainers.image.version:
+        valueRegex: /\w+/
+        level: "warn"
+        message: "Label 'org.opencontainers.image.version' is missing or has invalid format"
+        required: true
+      org.opencontainers.image.revision:
+        valueRegex: /\w+/
+        level: "warn"
+        message: "Label 'org.opencontainers.image.revision' is missing or has invalid format"
+        required: true
+      org.opencontainers.image.licenses:
+        valueRegex: /\w+/
+        level: "warn"
+        message: "Label 'org.opencontainers.image.licenses' is missing or has invalid format"
+        required: true
+
+
+  HEALTHCHECK:
+    paramSyntaxRegex: /.+/
+    rules:
+      -
+        label: "curl_in_healthcheck"
+        regex: /curl/
+        level: "warn"
+        message: "cURL found in HEALTHCHECK instruction"
+        description: "Avoid use of cURL"
+ 
+required_instructions:
+  -
+    instruction: "HEALTHCHECK"
+    count: 1
+    level: "warn"
+    message: "There is no HEALTHCHECK instruction"
+    description: "Define a command to check container's health"
+

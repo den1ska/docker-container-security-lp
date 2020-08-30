@@ -3,6 +3,10 @@ FROM alpine:3.11.6
 ENV HUGO_VERSION=0.74.3
 ENV HUGO_HOME=/opt/hugo
 
+ARG VERSION=1.0
+ARG REVISION=x
+ARG CREATED_AT=x
+
 ARG HUGO_SHA256=269482fff497051a7919da213efa29c7f59c000e51cf14c1d207ecf98d87bf33
 ARG HUGO_URL=https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_${HUGO_VERSION}_Linux-64bit.tar.gz
 
@@ -39,6 +43,12 @@ WORKDIR /src
 EXPOSE 1313
 
 LABEL MAINTAINER=denis@kononenko.spb.ru
+LABEL org.opencontainers.image.title="OrgDocs Builder"
+LABEL org.opencontainers.image.created="$CREATED_AT"
+LABEL org.opencontainers.image.source="git@github.com:den1ska/docker-container-security-lp.git"
+LABEL org.opencontainers.image.version="$VERSION"
+LABEL org.opencontainers.image.revision="$REVISION"
+LABEL org.opencontainers.image.licenses=WTFPL
 
 HEALTHCHECK CMD hugo env || exit 1
 
