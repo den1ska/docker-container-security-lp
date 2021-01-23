@@ -1,14 +1,20 @@
 -include .env
 
-NS=lp
-IMAGE_NAME = hugo-builder
-VERSION = 1.0
+NS ?= lp
+IMAGE_NAME ?= hugo-builder
+VERSION ?= 1.0
 REVISION = $(shell git rev-parse HEAD)
 CREATED_AT =$(shell date --utc --iso-8601=seconds)
 PORT ?= 1313
 IP ?= 127.0.0.1
 BASEURL ?= http://localhost
 CLAIRSCANNER ?= $(shell which clair-scanner)
+SIGNER_PASSPHRASE ?=
+DOCKER_CONTENT_TRUST ?= 0
+
+ifndef SIGNER_PASSPHRASE
+$(error SIGNER_PASSPHRASE is not defined)
+endif
 
 default: build
 
@@ -40,8 +46,8 @@ endif
 
 lint:
 	@echo "Run Static Analysis..."
-	@docker run --rm -i -v$(shell pwd)/hadolint.yaml:/.hadolint.yaml hadolint/hadolint hadolint - < Dockerfile
-	@docker run --rm -i -v$(shell pwd):/root projectatomic/dockerfile-lint dockerfile_lint -r policies/all_rules.yml
+	@DOCKER_CONTENT_TRUST=0 docker run --rm -i -v$(shell pwd)/hadolint.yaml:/.hadolint.yaml hadolint/hadolint hadolint - < Dockerfile
+	@DOCKER_CONTENT_TRUST=0 docker run --rm -i -v$(shell pwd):/root projectatomic/dockerfile-lint dockerfile_lint -r policies/all_rules.yml
 	@echo "No issues found"
 
 security-scan:
@@ -52,13 +58,21 @@ else
 	$(error CLAIRSCANNER is not found)
 endif
 
+sign:
+	@echo "Signing the image..."
+	@DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE="$(SIGNER_PASSPHRASE)" docker trust sign $(NS)/$(IMAGE_NAME):$(VERSION)
+
 inspect-labels:
 	@echo "Inspecting labels..."
 	@docker inspect --format '{{range $$k, $$v := .Config.Labels}}{{$$k}} = {{$$v}}{{printf "\n"}}{{end}}' $(NS)/$(IMAGE_NAME):$(VERSION)
+
+inspect-keys:
+	@echo "Inspecting keys..."
+	@docker trust inspect --pretty $(NS)/$(IMAGE_NAME)
 
 bom:
 	@echo Generating Bill of Materials...
 	@docker run --privileged --rm --device /dev/fuse -v /var/run/docker.sock:/var/run/docker.sock ternd report -f spdxtagvalue -i $(NS)/$(IMAGE_NAME):$(VERSION) > $(IMAGE_NAME).bom
 
-.PHONY: builder build lint stop start security-scan inspect-labels
+.PHONY: builder build lint stop start security-scan sign inspect-labels inspect-keys
 
